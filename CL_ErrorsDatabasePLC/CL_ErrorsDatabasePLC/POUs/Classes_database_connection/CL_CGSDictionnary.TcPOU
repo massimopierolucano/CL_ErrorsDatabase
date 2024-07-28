@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="CL_CGSDictionnary" Id="{7b16c7d3-9196-4f8e-9b9f-12e06f7fc82b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CL_CGSDictionnary
+VAR
+	bInit	            :	BOOL	:= FALSE;
+	
+	_usiNbIter_C	    :	USINT;
+	_udiSizeKeyArray	:	UDINT;
+	
+	usiSearchIter     : USINT;
+  udiUpId           : UDINT;
+  udiDownId         : UDINT;
+	
+	// Pointer to the keys array to search into
+	_udiKeyArray_P	:	POINTER TO UDINT;	// Access to the keys array with a pointer, limited risks as long as udiUpId and udiDownId are correctly set.
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Init" Id="{b3bab1f1-63c9-4e19-85a2-75ef64e188f8}">
+      <Declaration><![CDATA[METHOD PUBLIC Init : BOOL
+VAR_INPUT
+	udiKeyArray_P		:	POINTER TO UDINT;
+	usiNbIter_C			:	SINT;
+	udiSizeKeyArray	:	UDINT;
+END_VAR
+
+VAR
+	bInputContract 	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Init := FALSE;
+
+IF NOT bInit THEN
+		
+	bInputContract := 		udiKeyArray_P <> 0
+										AND usiNbIter_C > 0 
+										AND LREAL_TO_UDINT(EXPT(2,usiNbIter_C)) = udiSizeKeyArray;	// For the real size of the array, to do it outside (too complicated here)
+	
+	IF bInputContract THEN	// Test for the size of the inputs: to check if possible 
+		
+		// Initialisation of the "constant" values
+		_udiKeyArray_P		:= udiKeyArray_P;
+		_usiNbIter_C			:=	usiNbIter_C;
+		_udiSizeKeyArray	:= udiSizeKeyArray;
+		
+		// Initialisation for the method
+		usiSearchIter := usiNbIter_C;
+  	udiUpId       := udiSizeKeyArray;
+  	udiDownId     := 1;
+		bInit := TRUE;
+	END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Search" Id="{b463ba90-7401-45fd-9b4b-b60bb273e116}">
+      <Declaration><![CDATA[METHOD Search : BOOL
+VAR_INPUT
+  udiKey_DB	:	UDINT	:=	0;
+END_VAR
+VAR_OUTPUT
+	udiFoundKeyIndex	:	UDINT;
+  bError:  BOOL;
+END_VAR
+VAR
+  udiMidDownId: UDINT;
+  udiMidUpId: UDINT;
+  udiMidUpKey: UDINT;
+  udiMidLowKey:  UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF bInit THEN
+
+  Search := FALSE; 
+  bError := FALSE;
+  
+  udiMidDownId := (udiUpId+udiDownId-1)/2;
+  udiMidUpId := udiMidDownId+1;
+      
+  udiMidUpKey := _udiKeyArray_P[udiMidUpId];
+  udiMidLowKey := _udiKeyArray_P[udiMidDownId];
+      
+  // Also manage the case when final iter and no case found
+  IF udiKey_DB = udiMidLowKey THEN
+		udiFoundKeyIndex := udiMidDownId+1;	// +1 required, since the Pointer index begins at 0, while the corresponding array starts at 1!
+		usiSearchIter := _usiNbIter_C;
+		udiUpId   := _udiSizeKeyArray;
+		udiDownId := 1;
+    Search := TRUE;
+  ELSIF udiMidUpKey = udiKey_DB THEN
+		udiFoundKeyIndex := udiMidUpId+1;	//+1 required, since the Pointer index begins at 0, while the corresponding array starts at 1!
+		usiSearchIter := _usiNbIter_C;
+		udiUpId   := _udiSizeKeyArray;
+		udiDownId := 1;
+    Search	:= TRUE;
+  ELSE 
+    IF usiSearchIter > 1 THEN
+      IF udiMidLowKey > udiKey_DB THEN
+          udiUpId := udiMidDownId;
+					usiSearchIter := usiSearchIter-1;
+      ELSIF udiMidUpKey < udiKey_DB THEN
+          udiDownId := udiMidUpId;
+					usiSearchIter := usiSearchIter-1;
+      ELSE
+				usiSearchIter := _usiNbIter_C;
+				udiUpId   := _udiSizeKeyArray;
+				udiDownId := 1;
+				Search := TRUE;
+				bError := TRUE;
+      END_IF
+    ELSE
+			usiSearchIter := _usiNbIter_C;
+			udiUpId   := _udiSizeKeyArray;
+			udiDownId := 1;
+      Search := TRUE;
+      bError := TRUE;
+    END_IF
+  END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

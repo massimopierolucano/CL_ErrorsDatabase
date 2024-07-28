@@ -1,0 +1,399 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="CL_ErrorDB" Id="{efbd1240-edba-444e-8e0c-3c0ed65f225d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK CL_ErrorDB
+VAR  
+  // Internal variables
+  bInit                   :	BOOL	:= FALSE;
+  stmMain                 : Main_STM := Main_STM.Init;
+	
+	// AMS variable
+	fbAMSaddrGetter	        :	FB_GetLocalAmsNetId;
+  
+  // DB related variables
+  // langStruct: ST_ParameterValues := (lang := C.sLangErrors);
+  dbErrorConnector        : FB_SP_getErrorsMessages;
+	dbClassConnector        :	FB_SP_getClassNameAndIDs;
+  stmLoadDB               : STM_LoadDB	:= STM_LoadDB.GetAMSAdress;
+  udiIndex                : UDINT := 1;
+  
+  // Size-related variables (previously known)
+  _stError_ARP  	        : POINTER TO ARRAY [1..C.nMaxRecordsDb_C] OF ST_SP_RecordReturn;
+  _sizeOfstError_AR       : UDINT;
+	_stClass_ARP		        : POINTER TO ARRAY [1..C.nMaxRecordsDb_C] OF ST_SP_ClassReturn;
+  _sizeOfstClass_AR       : UDINT;
+	
+  //udiErrorKeys_ARP        : ARRAY[1..C.nMaxUpSize_C] OF UDINT := [C.nMaxUpSize_C(0)];
+	//udiClassKeys_ARP		    :	ARRAY[1..C.nMaxUpSize_C] OF UDINT := [C.nMaxUpSize_C(0)];
+
+  udiErrorKeys_ARP        : POINTER TO ARRAY[1..C.nMaxUpSize_C] OF UDINT;
+	udiClassKeys_ARP		    :	POINTER TO ARRAY[1..C.nMaxUpSize_C] OF UDINT;
+	
+	// Dictionnary objects - used to generalised the key search to any type of data structure
+	objErrorDict	          :	CL_CGSDictionnary;
+	objClassDict	          :	CL_CGSDictionnary;
+	
+	// Variables containing constants
+  _uiClassShiftIndex      : UDINT;
+  _uiErrShiftIndex        : UDINT;
+  _uiUpSizeErrPowerTwo    : UDINT;
+  _uiUpSizeClassPowerTwo  : UDINT;
+  _uiErrNumIter           : SINT;
+  _uiClassNumIter         : SINT;
+	_stConstValues	        :	ST_ErrorDBConst;
+	
+	// AMS address
+	sAMSAdrDbConnect        :	T_AmsNetId;
+	stLangMsg               :	ST_ParameterValues	:= (lang := '');	//:= (lang := C.sLangErrors);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="GetClassMsg" Id="{1634925f-eebc-45ed-a4f8-90d2cc64224c}">
+      <Declaration><![CDATA[METHOD PUBLIC GetClassMsg : STRING(255)
+VAR_INPUT
+	udiIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetClassMsg := _stClass_ARP^[udiIndex].objDescriptMsg;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetErrorLongMsg" Id="{a01cf9d3-6139-46e7-b226-9aebf94d120b}">
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorLongMsg : STRING(255)
+VAR_INPUT
+	udiIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetErrorLongMsg := _stError_ARP^[udiIndex].errorMsgLong;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetErrorRemedMsg" Id="{23411cee-07e4-43bb-88c3-21da8be72fa3}">
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorRemedMsg : STRING(255)
+VAR_INPUT
+	udiIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetErrorRemedMsg := _stError_ARP^[udiIndex].remediationMsg;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetErrorShortMsg" Id="{f5161293-ac44-46b3-9eff-6c408a4f1f70}">
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorShortMsg : STRING(255)
+VAR_INPUT
+	udiIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetErrorShortMsg := _stError_ARP^[udiIndex].errorMsgShort;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetNumerics" Id="{d0bc10fe-ef3d-4f97-be38-a9a53af349a8}">
+      <Declaration><![CDATA[METHOD PUBLIC GetNumerics : ST_classAndErrorNum
+VAR_INPUT
+	udiErrorIndex	:	UDINT;
+	udiClassIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetNumerics.errorId := _stError_ARP^[udiErrorIndex].errorId;
+GetNumerics.hmiErrorShow	:=	_stError_ARP^[udiErrorIndex].hmiErrorShow;
+GetNumerics.telegramSending := _stError_ARP^[udiErrorIndex].telegramSending;
+GetNumerics.classId := _stClass_ARP^[udiClassIndex].classId;
+GetNumerics.instanceNum := _stClass_ARP^[udiClassIndex].instanceNum;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Init" Id="{ae88966b-dbe9-4bcc-b733-3adc427e3724}">
+      <Declaration><![CDATA[METHOD PUBLIC Init : BOOL
+VAR_INPUT
+  stConstValues   : ST_ErrorDBConst;
+END_VAR
+VAR
+	structSize			: UINT;
+	arraySize				: UDINT;
+  ind             : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stConstValues := stConstValues;
+Init := bInit := FALSE;
+IF _stConstValues.udiUsedDB > 0 AND (_stConstValues.udiErrNumRecord > 0) AND (_stConstValues.udiErrNumRecord < C.nMaxRecordsDb_C) AND (_stConstValues.udiClassNumRecord > 0) AND (_stConstValues.udiClassNumRecord < C.nMaxRecordsDb_C) THEN
+  _uiUpSizeErrPowerTwo:= nextPower2(_stConstValues.udiErrNumRecord);
+  _uiUpSizeClassPowerTwo := nextPower2(_stConstValues.udiClassNumRecord);
+
+  _uiErrShiftIndex := _uiUpSizeErrPowerTwo - _stConstValues.udiErrNumRecord;
+  _uiClassShiftIndex := _uiUpSizeClassPowerTwo - _stConstValues.udiClassNumRecord;
+
+  _uiErrNumIter := DINT_TO_SINT(numIterations(_stConstValues.udiErrNumRecord));
+  _uiClassNumIter := DINT_TO_SINT(numIterations(_stConstValues.udiClassNumRecord));
+  
+  //Errors DB array allocated in memory from 1..udiErrNumRecord
+  structSize := SIZEOF(ST_SP_RecordReturn);
+	arraySize := structSize * (_stConstValues.udiErrNumRecord+2);
+  _sizeOfstError_AR := structSize * (_stConstValues.udiErrNumRecord+1);
+	_stError_ARP := __NEW(BYTE, arraySize);
+
+  //Classes DB array allocated in memory from 1..udiClassNumRecord
+  structSize := SIZEOF(ST_SP_ClassReturn);
+	arraySize := structSize * (_stConstValues.udiClassNumRecord+2);
+  _sizeOfstClass_AR := structSize * (_stConstValues.udiClassNumRecord+1);
+	_stClass_ARP := __NEW(BYTE, arraySize);
+ 
+  IF _uiUpSizeErrPowerTwo < C.nMaxUpSize_C AND _uiUpSizeClassPowerTwo < C.nMaxUpSize_C THEN 
+    //Errors Keys array allocated in memory from 1.._uiUpSizeErrPowerTwo
+    structSize := SIZEOF(UDINT);
+    arraySize := structSize * (_uiUpSizeErrPowerTwo+2);
+    udiErrorKeys_ARP := __NEW(BYTE, arraySize);
+    FOR ind := 1 TO _uiUpSizeErrPowerTwo DO
+      udiErrorKeys_ARP^[ind] := 0;
+		END_FOR
+  
+    //Classes Keys array allocated in memory from 1.._uiUpSizeClassPowerTwo
+    structSize := SIZEOF(UDINT);
+    arraySize := structSize * (_uiUpSizeClassPowerTwo+2);
+    udiClassKeys_ARP := __NEW(BYTE, arraySize);
+    FOR ind := 1 TO _uiUpSizeClassPowerTwo DO
+      udiClassKeys_ARP^[ind] := 0;
+		END_FOR
+    
+    Init := bInit := TRUE;
+  END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="nextPower2" Id="{34464a67-a5c8-4996-98b3-e2186b79923a}">
+      <Declaration><![CDATA[METHOD PRIVATE nextPower2 : UDINT
+VAR_INPUT
+  n : UDINT;
+END_VAR
+VAR
+  power : UDINT := 1;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF (n <= 0) THEN
+  nextPower2 := 1;
+ELSIF (n AND (n - 1)) = 0 THEN 
+  // If n is already a power of 2
+  nextPower2 := n;
+ELSE
+
+  WHILE (power < n) DO
+     //power := SHL(power,1); // Left shift to get the next power of 2}
+     power := power * 2;
+  END_WHILE
+   
+  nextPower2 := power;
+END_IF
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="numIterations" Id="{133d9fa0-527a-41f8-a0b0-b3495164b694}">
+      <Declaration><![CDATA[METHOD PRIVATE numIterations : DINT
+VAR_INPUT
+  size : UDINT;
+END_VAR
+VAR
+  log2Size : REAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Calculate the logarithm base 2 of the size
+IF size > 0 THEN
+    log2Size := LN(size) / LN(2.0);
+    numIterations := TRUNC(log2Size) + 1;
+ELSE
+    numIterations := 0; // Handle invalid input
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Run" Id="{533c7c27-11b6-44aa-a269-98af32de030f}">
+      <Declaration><![CDATA[METHOD PUBLIC Run : BOOL
+VAR_OUTPUT
+  bLoadErr:  BOOL;
+END_VAR
+VAR
+  bStillExec: BOOL;
+	bAnError: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bInit THEN
+  RETURN;
+END_IF
+ 
+Run := FALSE;
+bLoadErr := FALSE;
+
+CASE stmLoadDB OF
+  STM_LoadDB.GetAMSAdress:	// Useless here, as the previous address was already given
+    fbAMSaddrGetter(bExecute := TRUE, tTimeOut := _stConstValues.tAMSTimeout,bBusy => bStillExec, bError => bAnError, AddrString	=> sAMSAdrDbConnect);
+      IF NOT bStillExec THEN
+        IF bANError THEN
+          Run := TRUE;
+          bLoadErr := TRUE;
+       ELSE
+          stLangMsg.lang := _stConstValues.sLanguageForErrors;
+          stmLoadDB := STM_LoadDB.StoreErrorView;
+        END_IF
+      END_IF
+
+  STM_LoadDB.StoreErrorView:
+    dbErrorConnector(sAMSNetId := sAMSAdrDbConnect,nDBID := _stConstValues.udiUsedDB, nRecordStartIndex := 0, nLengthRecord := _stConstValues.udiErrNumRecord,tTimeoutIn := _stConstValues.tDBConnectTimeout, sizeRecord := _sizeOfstError_AR, bExecute := TRUE, bBusy => bStillExec, bError => bAnError, stRecord_P := _stError_ARP, stParameterValues := stLangMsg); // tTimeout := T#30S
+      IF NOT bStillExec THEN
+        IF bANError THEN
+          Run := TRUE;
+          bLoadErr := TRUE;
+        ELSE
+          stmLoadDB := STM_LoadDB.StoreClassView;
+        END_IF
+      END_IF
+      
+  STM_LoadDB.StoreClassView:
+    dbClassConnector(sAMSNetId := sAMSAdrDbConnect, nDBID := _stConstValues.udiUsedDB, nRecordStartIndex := 0, nLengthRecord := _stConstValues.udiClassNumRecord,tTimeoutIn := _stConstValues.tDBConnectTimeout, sizeRecord := _sizeOfstClass_AR, bExecute := TRUE, bBusy => bStillExec, bError => bAnError, stRecord_P := _stClass_ARP);
+      IF NOT bStillExec THEN
+        IF bANError THEN
+          Run := TRUE;
+          bLoadErr := TRUE;
+        ELSE
+          stmLoadDB := STM_LoadDB.GenErrorKeys;
+        END_IF
+      END_IF
+  
+  STM_LoadDB.GenErrorKeys:
+//      udiErrorKeys_AR[udiIndex+ C.uiErrorShiftIndex_C] := STRING_TO_UDINT(_stError_ARP[udiIndex].errorId);	// error ID unique for any type of error, no matter the class!
+    udiErrorKeys_ARP^[udiIndex+ _uiErrShiftIndex] := STRING_TO_UDINT(_stError_ARP^[udiIndex].errorId);	// error ID unique for any type of error, no matter the class!
+    
+    udiIndex := udiIndex + 1;
+//      IF udiIndex > C.uiNumErrorSources_C THEN
+    IF udiIndex > _stConstValues.udiErrNumRecord THEN
+      udiIndex := 1;
+//				objErrorDict.Init(udiKeyArray_P	:=	ADR(udiErrorKeys_AR),usiNbIter_C := C.uiErrorNumIter_C,udiSizeKeyArray := C.uiErrorUpSizePowerTwo_C);
+      objErrorDict.Init(udiKeyArray_P	:=	udiErrorKeys_ARP,usiNbIter_C := _uiErrNumIter, udiSizeKeyArray := _uiUpSizeErrPowerTwo);
+      stmLoadDB := STM_LoadDB.GenClassKeys;
+    END_IF
+    
+STM_LoadDB.GenClassKeys:
+//      udiClassKeys_AR[udiIndex+ C.uiClassShiftIndex_C] := STRING_TO_UDINT(_stClass_ARP[udiIndex].classId);	// error ID unique for any type of error, no matter the class!
+    udiClassKeys_ARP^[udiIndex+ _uiClassShiftIndex] := STRING_TO_UDINT(_stClass_ARP^[udiIndex].classId);
+    
+    udiIndex := udiIndex + 1;
+//      IF udiIndex > C.uiNumClassWithErr_C THEN
+    IF udiIndex > _stConstValues.udiClassNumRecord THEN
+      udiIndex := 1;
+//				objClassDict.Init(udiKeyArray_P	:=	ADR(udiClassKeys_AR),usiNbIter_C := C.uiClassNumIter_C,udiSizeKeyArray := C.uiClassUpSizePowerTwo_C);
+      objClassDict.Init(udiKeyArray_P	:=	udiClassKeys_ARP,usiNbIter_C := _uiClassNumIter, udiSizeKeyArray := _uiUpSizeClassPowerTwo);
+      stmLoadDB := STM_LoadDB.EndReadingDB;  
+    END_IF
+
+STM_LoadDB.EndReadingDB:
+  Run := TRUE;
+  bInit := TRUE;
+  bLoadErr := FALSE;
+  stmLoadDB := STM_LoadDB.StoreErrorView;
+  
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SearchClassData" Id="{bc738707-b2df-4833-b614-9a84dfe70c8f}">
+      <Declaration><![CDATA[METHOD SearchClassData : BOOL
+VAR_INPUT
+  classID	:	STRING(3);
+END_VAR
+VAR_OUTPUT
+//	values:	ST_SP_ClassReturn;
+	udiClassIndex:	UDINT;
+  error:  BOOL;
+END_VAR
+VAR
+	bExecEnd:		BOOL;
+	foundKey	:	UDINT;
+	uiSafeIter:	USINT := 0;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[REPEAT
+	bExecEnd := objClassDict.Search(udiKey_DB := STRING_TO_UDINT(classID),udiFoundKeyIndex => foundKey, bError => error);
+	uiSafeIter := uiSafeIter + 1;
+//	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > C.uiClassNumIter_C)
+	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiClassNumIter)
+END_REPEAT
+
+//values := _stClass_ARP[foundKey-C.uiClassShiftIndex_C];
+udiClassIndex := foundKey -_uiClassShiftIndex;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SearchErrorData" Id="{fd095195-d56a-4aa9-8b21-0c660bf77e01}">
+      <Declaration><![CDATA[METHOD SearchErrorData : BOOL
+VAR_INPUT
+  errorID	:	STRING(3);
+END_VAR
+VAR_OUTPUT
+//	values:	ST_SP_RecordReturn;
+	udiErrorIndex	:	UDINT;
+  error:  BOOL;
+END_VAR
+VAR
+	bExecEnd:		BOOL;
+	foundKey	:	UDINT;
+	uiSafeIter:	USINT := 0;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[REPEAT
+	bExecEnd := objErrorDict.Search(udiKey_DB := STRING_TO_UDINT(errorID),udiFoundKeyIndex => foundKey, bError => error);
+	uiSafeIter := uiSafeIter + 1;
+//	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > C.uiErrorNumIter_C)
+	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiErrNumIter)
+END_REPEAT
+
+//values := _stError_ARP[foundKey-C.uiErrorShiftIndex_C];
+udiErrorIndex := foundKey-_uiErrShiftIndex;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="sMsgLang" Id="{587284e0-a98a-42e7-b712-afbcd31f035b}">
+      <Declaration><![CDATA[PROPERTY PUBLIC sMsgLang : STRING(2)]]></Declaration>
+      <Get Name="Get" Id="{7308a7dc-9e26-4985-a549-1815f4d90b53}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sMsgLang := _stConstValues.sLanguageForErrors;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="stConstValues" Id="{f56e9f31-e8fa-48aa-af3a-5375fd4b28d1}">
+      <Declaration><![CDATA[PROPERTY PUBLIC stConstValues : ST_ErrorDBConst]]></Declaration>
+      <Get Name="Get" Id="{019134f3-14ba-42e1-b821-d210d463f2b9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[stConstValues	:= _stConstValues;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{be2636bb-96c3-42f7-a217-2a9493bc125d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_stConstValues	:= stConstValues;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="WhichSeverity" Id="{214e707d-9a8d-4b98-b6af-e5c91bb2f879}">
+      <Declaration><![CDATA[METHOD PUBLIC WhichSeverity : BYTE
+VAR_INPUT
+	udiIndex	: UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[WhichSeverity := _stError_ARP^[udiIndex].severity;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

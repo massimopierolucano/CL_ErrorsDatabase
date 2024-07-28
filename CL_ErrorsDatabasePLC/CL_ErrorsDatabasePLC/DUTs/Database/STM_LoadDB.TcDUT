@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="STM_LoadDB" Id="{6fbeab2b-e79d-4bbc-9e80-61c11ba1b7eb}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE STM_LoadDB :
+(
+  
+  GetAMSAdress,
+	StoreErrorView,
+	StoreClassView,
+  GenErrorKeys,
+	GenClassKeys,
+	EndReadingDB
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

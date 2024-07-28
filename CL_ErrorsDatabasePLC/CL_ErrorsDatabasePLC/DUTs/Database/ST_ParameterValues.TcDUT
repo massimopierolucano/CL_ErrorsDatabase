@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ParameterValues" Id="{03e0a338-3f7d-422e-8ed6-afcba9edd607}">
+    <Declaration><![CDATA[TYPE ST_ParameterValues :
+STRUCT
+	lang: STRING(2);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="Main_STM" Id="{b2e29890-c613-43ea-860c-b9efeb22fffc}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE Main_STM :
+(
+  Init,
+  Run,
+  FillingArrays,
+  SearchIndex,
+  Idle,
+  Error
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

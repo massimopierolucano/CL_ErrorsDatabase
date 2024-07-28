@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_SP_getClassNameAndIDs" Id="{573b05e5-a032-46b0-bac7-edc695646c8f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SP_getClassNameAndIDs
+VAR_INPUT
+	sAMSNetId	:	T_AmsNetId;
+	nDBID	:	UDINT	:= 1;
+	nRecordStartIndex: UDINT;
+	nLengthRecord:	UDINT;
+	tTimeoutIn: TIME;
+	bExecute: BOOL;
+	stRecord_P: POINTER TO ST_SP_ClassReturn;
+	sizeRecord: UDINT;
+END_VAR
+VAR_OUTPUT
+	bBusy: BOOL;
+	bError: BOOL;
+	ipResult: I_TcMessage;
+END_VAR
+VAR
+	R_TRIG_Execute: R_TRIG;
+	nState: INT;
+	nErrState: INT;
+//	fbSQLDatabase: FB_SQLDatabaseEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
+//	fbSQLStoredProcedure: FB_SQLStoredProcedureEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
+//	fbSQLResult: FB_SQLResultEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
+	fbSQLDatabase: FB_SQLDatabaseEvt(sNetID := '', tTimeout := T#15S);
+	fbSQLStoredProcedure: FB_SQLStoredProcedureEvt(sNetID := '', tTimeout := T#15S);
+	fbSQLResult: FB_SQLResultEvt(sNetID := '', tTimeout := T#15S);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE nState OF
+	0:
+		R_TRIG_Execute(CLK:=bExecute);
+		IF R_TRIG_Execute.Q THEN
+			nState := 1;
+			bBusy:=TRUE;
+			bError:=FALSE;
+			nErrState:=0;
+		END_IF
+	1:
+		IF fbSQLDatabase.Connect(hDBID := nDBID) THEN
+			ipResult:=fbSQLDatabase.ipTcResult;
+			IF fbSQLDatabase.bError THEN
+				nErrState:=1;
+				nState:=255;
+			ELSE
+				nState:= 2;
+			END_IF
+		END_IF
+	2:
+		IF fbSQLDatabase.CreateSP('getClassNameAndIDs', 0, 0, ADR(fbSQLStoredProcedure)) THEN
+			IF fbSQLDatabase.bError THEN
+				nErrState:=2;
+				nState:=255;
+			ELSE
+				nState:=3;
+			END_IF
+		END_IF
+	3:
+		IF fbSQLStoredProcedure.ExecuteDataReturn(0, 0, ADR(fbSQLResult))THEN
+			ipResult:=fbSQLStoredProcedure.ipTcResult;
+			IF fbSQLStoredProcedure.bError THEN
+				nErrState:=3;
+				nState:=255;
+			ELSE
+				nState:= 4;
+			END_IF
+		END_IF
+	4:
+		IF fbSQLResult.Read(nRecordStartIndex, nLengthRecord,stRecord_P, sizeRecord, FALSE, TRUE) THEN
+			ipResult:=fbSQLResult.ipTcResult;
+			IF fbSQLResult.bError THEN
+				nErrState:=4;
+				nState:= 255;
+			ELSE
+				nState:= 5;
+			END_IF
+		END_IF
+	5:
+		IF fbSQLStoredProcedure.Release() THEN
+			IF fbSQLStoredProcedure.bError THEN
+				nErrState:=5;
+				nState:=255;
+			ELSE
+				nState:= 200;
+			END_IF
+		END_IF
+	200:
+		IF fbSQLDatabase.Disconnect() THEN
+			nState := 0;
+			bBusy:= FALSE;
+		END_IF
+	255:
+		bError:= TRUE;
+		bBusy:= FALSE;
+		IF nErrState > 1 THEN
+			nState:=200;
+		ELSE
+			nState:=0;
+		END_IF
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SP_RecordReturn" Id="{bfb6bbb1-2cda-45da-b052-79bbf3658d1e}">
+    <Declaration><![CDATA[TYPE ST_SP_RecordReturn :
+STRUCT
+	tableId: UDINT;
+	//classId: STRING(3);
+	errorId: STRING(3);
+	severity: BYTE;
+	errorMsgShort: STRING(255);
+	errorMsgLong: STRING(255);
+	remediationMsg: STRING(255);
+	telegramSending: STRING(1);
+	hmiErrorShow: STRING(1);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

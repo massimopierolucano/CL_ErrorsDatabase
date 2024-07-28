@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ErrorDBConst" Id="{d2c1584f-aa4f-40c2-b5c4-ced382f04451}">
+    <Declaration><![CDATA[TYPE ST_ErrorDBConst :
+	STRUCT
+		udiErrNumRecord		  :	UDINT := 0;
+		udiClassNumRecord		:	UDINT := 0;
+		sLanguageForErrors	:	STRING(2)	:= 'en';
+		udiUsedDB						:	UDINT := 0;
+		tDBConnectTimeout		:	TIME	:=	TIME#15S;
+		tAMSTimeout					:	TIME	:=	TIME#10S;
+	END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

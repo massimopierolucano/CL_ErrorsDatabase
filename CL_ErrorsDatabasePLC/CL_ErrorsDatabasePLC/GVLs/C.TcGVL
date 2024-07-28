@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="C" Id="{0308330d-e4af-4094-9b92-88c207c3c970}">
+    <Declaration><![CDATA[// constant to be set in order to describe the greenhouse
+// abbreviation GH stands everywhere for Greenhouse
+{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT 
+  //Errors database constants
+  nMaxRecordsDb_C          : UDINT := 1024;
+  nMaxUpSize_C             : UDINT := 2048;
+  //uiErrorUpSizePowerTwo_C : UDINT := 1024;
+  //uiClassUpSizePowerTwo_C : UDINT := 1024;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>
