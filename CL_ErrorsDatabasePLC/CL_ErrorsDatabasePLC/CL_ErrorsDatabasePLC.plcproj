@@ -17,7 +17,7 @@
     <Implicit_Jitter_Distribution>{08be08b1-af99-458b-af8d-9b6a8ae64a13}</Implicit_Jitter_Distribution>
     <LibraryReferences>{dd171235-a256-49b5-8253-32d3a846e7c0}</LibraryReferences>
     <Company>CleanGreensSA</Company>
-    <Released>true</Released>
+    <Released>false</Released>
     <Title>ErrorDatabase_class</Title>
     <ProjectVersion>1.0</ProjectVersion>
     <LibraryCategories>
@@ -126,11 +126,6 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="CL_ErrorsDatabasePLC.tmc">
-      <SubType>Content</SubType>
-    </None>
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>

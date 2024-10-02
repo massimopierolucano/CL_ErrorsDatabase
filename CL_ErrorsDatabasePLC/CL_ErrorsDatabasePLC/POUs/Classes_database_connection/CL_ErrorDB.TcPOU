@@ -57,7 +57,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetClassMsg := _stClass_ARP^[udiIndex].objDescriptMsg;]]></ST>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiClassNumRecord then
+  GetClassMsg := _stClass_ARP^[udiIndex].objDescriptMsg;
+else
+  GetClassMsg := '';
+end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorLongMsg" Id="{a01cf9d3-6139-46e7-b226-9aebf94d120b}">
@@ -67,7 +71,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetErrorLongMsg := _stError_ARP^[udiIndex].errorMsgLong;]]></ST>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiErrNumRecord then
+  GetErrorLongMsg := _stError_ARP^[udiIndex].errorMsgLong;
+else
+  GetErrorLongMsg := '';
+end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorRemedMsg" Id="{23411cee-07e4-43bb-88c3-21da8be72fa3}">
@@ -77,7 +85,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetErrorRemedMsg := _stError_ARP^[udiIndex].remediationMsg;]]></ST>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiErrNumRecord then
+  GetErrorRemedMsg := _stError_ARP^[udiIndex].remediationMsg;
+else
+  GetErrorRemedMsg := '';
+end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorShortMsg" Id="{f5161293-ac44-46b3-9eff-6c408a4f1f70}">
@@ -87,7 +99,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetErrorShortMsg := _stError_ARP^[udiIndex].errorMsgShort;]]></ST>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiErrNumRecord then
+  GetErrorShortMsg := _stError_ARP^[udiIndex].errorMsgShort;
+else
+  GetErrorShortMsg := '';
+end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetNumerics" Id="{d0bc10fe-ef3d-4f97-be38-a9a53af349a8}">
@@ -98,11 +114,26 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetNumerics.errorId := _stError_ARP^[udiErrorIndex].errorId;
-GetNumerics.hmiErrorShow	:=	_stError_ARP^[udiErrorIndex].hmiErrorShow;
-GetNumerics.telegramSending := _stError_ARP^[udiErrorIndex].telegramSending;
-GetNumerics.classId := _stClass_ARP^[udiClassIndex].classId;
-GetNumerics.instanceNum := _stClass_ARP^[udiClassIndex].instanceNum;]]></ST>
+        <ST><![CDATA[//MPL if the error DB is not loaded or empty or not found, udiClassIndex and/or udiErrorIndex return 0 !!
+//MPL write/read to/from the array must be protected against index out of boundaries !!
+
+if udiErrorIndex > 0 and udiErrorIndex <= _stConstValues.udiErrNumRecord then
+  GetNumerics.errorId := _stError_ARP^[udiErrorIndex].errorId;
+  GetNumerics.hmiErrorShow	:=	_stError_ARP^[udiErrorIndex].hmiErrorShow;
+  GetNumerics.telegramSending := _stError_ARP^[udiErrorIndex].telegramSending;
+else
+  GetNumerics.errorId := '000';
+  GetNumerics.hmiErrorShow	:=	'0';
+  GetNumerics.telegramSending := '0';  
+end_if
+
+if udiClassIndex > 0 and udiClassIndex <= _stConstValues.udiClassNumRecord then
+  GetNumerics.classId := _stClass_ARP^[udiClassIndex].classId;
+  GetNumerics.instanceNum := _stClass_ARP^[udiClassIndex].instanceNum;
+else
+  GetNumerics.classId := '000';
+  GetNumerics.instanceNum := 0;  
+end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="Init" Id="{ae88966b-dbe9-4bcc-b733-3adc427e3724}">
@@ -323,8 +354,8 @@ END_VAR]]></Declaration>
 	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiClassNumIter)
 END_REPEAT
 
-//values := _stClass_ARP[foundKey-C.uiClassShiftIndex_C];
-udiClassIndex := foundKey -_uiClassShiftIndex;]]></ST>
+//MPL if the error DB is not loaded or empty or not found, udiClassIndex return 0 !!
+udiClassIndex := foundKey -_uiClassShiftIndex; //values := _stClass_ARP[foundKey-C.uiClassShiftIndex_C];]]></ST>
       </Implementation>
     </Method>
     <Method Name="SearchErrorData" Id="{fd095195-d56a-4aa9-8b21-0c660bf77e01}">
@@ -351,8 +382,8 @@ END_VAR
 	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiErrNumIter)
 END_REPEAT
 
-//values := _stError_ARP[foundKey-C.uiErrorShiftIndex_C];
-udiErrorIndex := foundKey-_uiErrShiftIndex;]]></ST>
+//MPL if the error DB is not loaded or empty or not found, udiErrorIndex return 0 !!
+udiErrorIndex := foundKey-_uiErrShiftIndex;//values := _stError_ARP[foundKey-C.uiErrorShiftIndex_C];]]></ST>
       </Implementation>
     </Method>
     <Property Name="sMsgLang" Id="{587284e0-a98a-42e7-b712-afbcd31f035b}">
@@ -366,25 +397,6 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="stConstValues" Id="{f56e9f31-e8fa-48aa-af3a-5375fd4b28d1}">
-      <Declaration><![CDATA[PROPERTY PUBLIC stConstValues : ST_ErrorDBConst]]></Declaration>
-      <Get Name="Get" Id="{019134f3-14ba-42e1-b821-d210d463f2b9}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[stConstValues	:= _stConstValues;]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{be2636bb-96c3-42f7-a217-2a9493bc125d}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[_stConstValues	:= stConstValues;]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
     <Method Name="WhichSeverity" Id="{214e707d-9a8d-4b98-b6af-e5c91bb2f879}">
       <Declaration><![CDATA[METHOD PUBLIC WhichSeverity : BYTE
 VAR_INPUT
@@ -392,7 +404,11 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[WhichSeverity := _stError_ARP^[udiIndex].severity;]]></ST>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiErrNumRecord then
+  WhichSeverity := _stError_ARP^[udiIndex].severity;
+else
+  WhichSeverity := 0;
+END_IF]]></ST>
       </Implementation>
     </Method>
   </POU>
