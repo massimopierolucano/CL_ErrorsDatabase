@@ -16,10 +16,10 @@
     <Implicit_KindOfTask>{afaa958e-93e2-47d1-9b36-fff5a2cc1fb0}</Implicit_KindOfTask>
     <Implicit_Jitter_Distribution>{08be08b1-af99-458b-af8d-9b6a8ae64a13}</Implicit_Jitter_Distribution>
     <LibraryReferences>{dd171235-a256-49b5-8253-32d3a846e7c0}</LibraryReferences>
-    <Company>CleanGreensSA</Company>
+    <Company>CleanGreens SA</Company>
     <Released>true</Released>
     <Title>CL_ErrorsDatabase</Title>
-    <ProjectVersion>2.0.2</ProjectVersion>
+    <ProjectVersion>2.0.3</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
@@ -36,7 +36,7 @@
       </LibraryCategory>
     </LibraryCategories>
     <SelectedLibraryCategories>
-      <Id xmlns="">{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
+      <Id>{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
     </SelectedLibraryCategories>
     <Placeholder>CGS_ErrorsDatabase</Placeholder>
     <Author>Martin Coffy and Massimo Lucano</Author>
