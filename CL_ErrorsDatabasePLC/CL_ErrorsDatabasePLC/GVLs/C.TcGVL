@@ -6,6 +6,8 @@
 {attribute 'qualified_only'}
 VAR_GLOBAL CONSTANT 
   //Errors database constants
+  tTimeoutConnectSQLDB_C   : TIME := T#4S;//WAS 15S
+
   nMaxRecordsDb_C          : UDINT := 1024;
   nMaxUpSize_C             : UDINT := 2048;
   //uiErrorUpSizePowerTwo_C : UDINT := 1024;
