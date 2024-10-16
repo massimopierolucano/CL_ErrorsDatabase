@@ -19,7 +19,7 @@
     <Company>CleanGreensSA</Company>
     <Released>true</Released>
     <Title>CL_ErrorsDatabase</Title>
-    <ProjectVersion>2.0.1</ProjectVersion>
+    <ProjectVersion>2.0.2</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
@@ -93,6 +93,10 @@
     <Folder Include="POUs\Classes_database_connection" />
   </ItemGroup>
   <ItemGroup>
+    <PlaceholderReference Include="CGS_ObjectsLibrary">
+      <DefaultResolution>CL_CleanGreensObjectsLibrary, * (CleanGreens SA)</DefaultResolution>
+      <Namespace>CL_CleanGreensObjectsLibrary</Namespace>
+    </PlaceholderReference>
     <PlaceholderReference Include="Tc2_Database">
       <DefaultResolution>Tc2_Database, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_Database</Namespace>
