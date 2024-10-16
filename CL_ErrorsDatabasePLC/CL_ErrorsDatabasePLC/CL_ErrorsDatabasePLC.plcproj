@@ -18,8 +18,8 @@
     <LibraryReferences>{dd171235-a256-49b5-8253-32d3a846e7c0}</LibraryReferences>
     <Company>CleanGreensSA</Company>
     <Released>true</Released>
-    <Title>ErrorDatabase_class</Title>
-    <ProjectVersion>1.2</ProjectVersion>
+    <Title>CL_ErrorsDatabase</Title>
+    <ProjectVersion>2.0.1</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
@@ -38,33 +38,33 @@
     <SelectedLibraryCategories>
       <Id xmlns="">{43ba0754-6919-43b3-a5b3-d04b4efb2ad6}</Id>
     </SelectedLibraryCategories>
-    <Placeholder>CL_errorDB</Placeholder>
+    <Placeholder>CGS_ErrorsDatabase</Placeholder>
     <Author>Martin Coffy and Massimo Lucano</Author>
     <Description>class to load error and class messages from SQL database</Description>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DUTs\Database\Main_STM.TcDUT">
+    <Compile Include="DUTs\Main_STM.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\STM_LoadDB.TcDUT">
+    <Compile Include="DUTs\STM_LoadDB.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_classAndErrorNum.TcDUT">
+    <Compile Include="DUTs\ST_classAndErrorNum.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_ErrorDBConst.TcDUT">
+    <Compile Include="DUTs\ST_ErrorDBConst.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_ParameterValues.TcDUT">
+    <Compile Include="DUTs\ST_ParameterValues.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_SP_ClassReturn.TcDUT">
+    <Compile Include="DUTs\ST_SP_ClassReturn.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_SP_RecordReturn.TcDUT">
+    <Compile Include="DUTs\ST_SP_RecordReturn.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\Database\ST_valToAccess.TcDUT">
+    <Compile Include="DUTs\ST_valToAccess.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GVLs\C.TcGVL">
@@ -88,7 +88,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
-    <Folder Include="DUTs\Database" />
     <Folder Include="GVLs" />
     <Folder Include="POUs" />
     <Folder Include="POUs\Classes_database_connection" />

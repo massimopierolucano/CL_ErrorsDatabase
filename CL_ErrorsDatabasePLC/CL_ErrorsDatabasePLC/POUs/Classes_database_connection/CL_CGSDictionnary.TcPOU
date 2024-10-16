@@ -13,7 +13,7 @@ VAR
   udiDownId         : UDINT;
 	
 	// Pointer to the keys array to search into
-	_udiKeyArray_P	:	POINTER TO UDINT;	// Access to the keys array with a pointer, limited risks as long as udiUpId and udiDownId are correctly set.
+	_udiKeyArray_P	  :	POINTER TO UDINT;	// Access to the keys array with a pointer, limited risks as long as udiUpId and udiDownId are correctly set.
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -22,29 +22,24 @@ END_VAR
     <Method Name="Init" Id="{b3bab1f1-63c9-4e19-85a2-75ef64e188f8}">
       <Declaration><![CDATA[METHOD PUBLIC Init : BOOL
 VAR_INPUT
-	udiKeyArray_P		:	POINTER TO UDINT;
-	usiNbIter_C			:	SINT;
-	udiSizeKeyArray	:	UDINT;
+	udiKeyArray_P		  :	POINTER TO UDINT;
+	usiNbIter_C			  :	USINT;
+	udiSizeKeyArray	  :	UDINT;
 END_VAR
-
 VAR
-	bInputContract 	: BOOL;
+	  udiSizeArCalc   : UDINT;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[Init := FALSE;
+udiSizeArCalc := LREAL_TO_UDINT(EXPT(2,usiNbIter_C));
 
-IF NOT bInit THEN
-		
-	bInputContract := 		udiKeyArray_P <> 0
-										AND usiNbIter_C > 0 
-										AND LREAL_TO_UDINT(EXPT(2,usiNbIter_C)) = udiSizeKeyArray;	// For the real size of the array, to do it outside (too complicated here)
-	
-	IF bInputContract THEN	// Test for the size of the inputs: to check if possible 
+IF NOT bInit AND udiKeyArray_P <> 0 AND usiNbIter_C > 0 AND udiSizeArCalc = udiSizeKeyArray THEN
+		// Test for the size of the inputs: to check if possible 
 		
 		// Initialisation of the "constant" values
 		_udiKeyArray_P		:= udiKeyArray_P;
-		_usiNbIter_C			:=	usiNbIter_C;
+		_usiNbIter_C			:= usiNbIter_C;
 		_udiSizeKeyArray	:= udiSizeKeyArray;
 		
 		// Initialisation for the method
@@ -52,7 +47,6 @@ IF NOT bInit THEN
   	udiUpId       := udiSizeKeyArray;
   	udiDownId     := 1;
 		bInit := TRUE;
-	END_IF
 END_IF
 ]]></ST>
       </Implementation>
@@ -60,39 +54,35 @@ END_IF
     <Method Name="Search" Id="{b463ba90-7401-45fd-9b4b-b60bb273e116}">
       <Declaration><![CDATA[METHOD Search : BOOL
 VAR_INPUT
-  udiKey_DB	:	UDINT	:=	0;
+  udiKey_DB	        :	UDINT	:=	0;
 END_VAR
 VAR_OUTPUT
 	udiFoundKeyIndex	:	UDINT;
-  bError:  BOOL;
+  bError            : BOOL;
 END_VAR
 VAR
-  udiMidDownId: UDINT;
-  udiMidUpId: UDINT;
-  udiMidUpKey: UDINT;
-  udiMidLowKey:  UDINT;
+  udiMidDownId      : UDINT;
+  udiMidUpId        : UDINT;
+  udiMidUpKey       : UDINT;
+  udiMidLowKey      : UDINT;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF bInit THEN
-
   Search := FALSE; 
   bError := FALSE;
-  
   udiMidDownId := (udiUpId+udiDownId-1)/2;
   udiMidUpId := udiMidDownId+1;
-      
-  udiMidUpKey := _udiKeyArray_P[udiMidUpId];
-  udiMidLowKey := _udiKeyArray_P[udiMidDownId];
-      
+  udiMidUpKey := _udiKeyArray_P[udiMidUpId-1];	// Correction of index 1, since a pointer to an UINT and not to an array of uint anymore (0-indexing by the TwinCAT syntax, while algorithm meant for an array starting at index 1).
+  udiMidLowKey := _udiKeyArray_P[udiMidDownId-1]; // Syntax for pointers of an array: arrayPoint[i] = (arrayPoint + i*size(type))^, with arrayPoint^ the first element of the array
   // Also manage the case when final iter and no case found
   IF udiKey_DB = udiMidLowKey THEN
-		udiFoundKeyIndex := udiMidDownId+1;	// +1 required, since the Pointer index begins at 0, while the corresponding array starts at 1!
+		udiFoundKeyIndex := udiMidDownId;	// +1 required, since the Pointer index begins at 0, while the corresponding array starts at 1! -- not required anymore!
 		usiSearchIter := _usiNbIter_C;
 		udiUpId   := _udiSizeKeyArray;
 		udiDownId := 1;
     Search := TRUE;
   ELSIF udiMidUpKey = udiKey_DB THEN
-		udiFoundKeyIndex := udiMidUpId+1;	//+1 required, since the Pointer index begins at 0, while the corresponding array starts at 1!
+		udiFoundKeyIndex := udiMidUpId;	//+1 required, since the Pointer index begins at 0, while the corresponding array starts at 1! -- not required anymore!
 		usiSearchIter := _usiNbIter_C;
 		udiUpId   := _udiSizeKeyArray;
 		udiDownId := 1;

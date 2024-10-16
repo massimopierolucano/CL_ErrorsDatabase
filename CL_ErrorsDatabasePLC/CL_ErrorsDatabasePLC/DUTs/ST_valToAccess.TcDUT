@@ -4,9 +4,9 @@
     <Declaration><![CDATA[TYPE ST_valToAccess :
 STRUCT
   	severity: BYTE;
-	errorSummary:	STRING(255);
-	errorMessage: STRING(255);
-	remediationMessage: STRING(255);
+	errorSummary:	T_MaxString;
+	errorMessage: T_MaxString;
+	remediationMessage: T_MaxString;
 	telegramSending: STRING(1);
 	hmiErrorShow: STRING(1);
 END_STRUCT

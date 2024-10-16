@@ -24,9 +24,9 @@ VAR
 //	fbSQLDatabase: FB_SQLDatabaseEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
 //	fbSQLStoredProcedure: FB_SQLStoredProcedureEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
 //	fbSQLResult: FB_SQLResultEvt(sNetID := sAMSNetId, tTimeout := tTimeoutIn);
-	fbSQLDatabase: FB_SQLDatabaseEvt(sNetID := '', tTimeout := T#15S);
-	fbSQLStoredProcedure: FB_SQLStoredProcedureEvt(sNetID := '', tTimeout := T#15S);
-	fbSQLResult: FB_SQLResultEvt(sNetID := '', tTimeout := T#15S);
+	fbSQLDatabase: FB_SQLDatabaseEvt(sNetID := '', tTimeout := C.tTimeoutConnectSQLDB_C);
+	fbSQLStoredProcedure: FB_SQLStoredProcedureEvt(sNetID := '', tTimeout := C.tTimeoutConnectSQLDB_C);
+	fbSQLResult: FB_SQLResultEvt(sNetID := '', tTimeout := C.tTimeoutConnectSQLDB_C);
 END_VAR
 ]]></Declaration>
     <Implementation>

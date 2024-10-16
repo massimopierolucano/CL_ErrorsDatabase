@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <POU Name="CL_ErrorDB" Id="{efbd1240-edba-444e-8e0c-3c0ed65f225d}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK CL_ErrorDB
+    <Declaration><![CDATA[{attribute 'enable_dynamic_creation'}
+FUNCTION_BLOCK CL_ErrorDB
 VAR  
   // Internal variables
   bInit                   :	BOOL	:= FALSE;
@@ -38,8 +39,8 @@ VAR
   _uiErrShiftIndex        : UDINT;
   _uiUpSizeErrPowerTwo    : UDINT;
   _uiUpSizeClassPowerTwo  : UDINT;
-  _uiErrNumIter           : SINT;
-  _uiClassNumIter         : SINT;
+  _uiErrNumIter           : USINT;
+  _uiClassNumIter         : USINT;
 	_stConstValues	        :	ST_ErrorDBConst;
 	
 	// AMS address
@@ -50,22 +51,36 @@ END_VAR
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
-    <Method Name="GetClassMsg" Id="{1634925f-eebc-45ed-a4f8-90d2cc64224c}">
-      <Declaration><![CDATA[METHOD PUBLIC GetClassMsg : STRING(255)
+    <Method Name="GetClassLongMsg" Id="{1634925f-eebc-45ed-a4f8-90d2cc64224c}">
+      <Declaration><![CDATA[METHOD PUBLIC GetClassLongMsg : T_MaxString
 VAR_INPUT
 	udiIndex	:	UDINT;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiClassNumRecord then
-  GetClassMsg := _stClass_ARP^[udiIndex].objDescriptMsg;
+  GetClassLongMsg := _stClass_ARP^[udiIndex].objDescriptMsg;
 else
-  GetClassMsg := '';
+  GetClassLongMsg := '';
+end_if]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetClassShortMsg" Id="{6c502736-ec9e-4536-81ee-39942b058627}">
+      <Declaration><![CDATA[METHOD PUBLIC GetClassShortMsg : T_MaxString
+VAR_INPUT
+	udiIndex	:	UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[if udiIndex > 0 and udiIndex <= _stConstValues.udiClassNumRecord then
+  GetClassShortMsg := _stClass_ARP^[udiIndex].className;
+else
+  GetClassShortMsg := '';
 end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorLongMsg" Id="{a01cf9d3-6139-46e7-b226-9aebf94d120b}">
-      <Declaration><![CDATA[METHOD PUBLIC GetErrorLongMsg : STRING(255)
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorLongMsg : T_MaxString
 VAR_INPUT
 	udiIndex	:	UDINT;
 END_VAR
@@ -79,7 +94,7 @@ end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorRemedMsg" Id="{23411cee-07e4-43bb-88c3-21da8be72fa3}">
-      <Declaration><![CDATA[METHOD PUBLIC GetErrorRemedMsg : STRING(255)
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorRemedMsg : T_MaxString
 VAR_INPUT
 	udiIndex	:	UDINT;
 END_VAR
@@ -93,7 +108,7 @@ end_if]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetErrorShortMsg" Id="{f5161293-ac44-46b3-9eff-6c408a4f1f70}">
-      <Declaration><![CDATA[METHOD PUBLIC GetErrorShortMsg : STRING(255)
+      <Declaration><![CDATA[METHOD PUBLIC GetErrorShortMsg : T_MaxString
 VAR_INPUT
 	udiIndex	:	UDINT;
 END_VAR
@@ -157,8 +172,8 @@ IF _stConstValues.udiUsedDB > 0 AND (_stConstValues.udiErrNumRecord > 0) AND (_s
   _uiErrShiftIndex := _uiUpSizeErrPowerTwo - _stConstValues.udiErrNumRecord;
   _uiClassShiftIndex := _uiUpSizeClassPowerTwo - _stConstValues.udiClassNumRecord;
 
-  _uiErrNumIter := DINT_TO_SINT(numIterations(_stConstValues.udiErrNumRecord));
-  _uiClassNumIter := DINT_TO_SINT(numIterations(_stConstValues.udiClassNumRecord));
+  _uiErrNumIter := numIterations(_stConstValues.udiErrNumRecord);
+  _uiClassNumIter := numIterations(_stConstValues.udiClassNumRecord);
   
   //Errors DB array allocated in memory from 1..udiErrNumRecord
   structSize := SIZEOF(ST_SP_RecordReturn);
@@ -224,21 +239,58 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="numIterations" Id="{133d9fa0-527a-41f8-a0b0-b3495164b694}">
-      <Declaration><![CDATA[METHOD PRIVATE numIterations : DINT
+      <Declaration><![CDATA[METHOD PRIVATE numIterations : USINT
 VAR_INPUT
-  size : UDINT;
+  size          : UDINT;
 END_VAR
 VAR
-  log2Size : REAL;
+  log2Size      : LREAL;
+  lrNumIter     : LREAL;
+  lrNumIterPwr2 : UDINT;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// Calculate the logarithm base 2 of the size
-IF size > 0 THEN
+IF size = 1 THEN
+	numIterations := 1;	// Explicitly set here, to avoid floating point roundings around 0
+ELSIF size > 1 THEN
     log2Size := LN(size) / LN(2.0);
-    numIterations := TRUNC(log2Size) + 1;
+    lrNumIter := LTRUNC(log2Size);
+    lrNumIterPwr2 := LREAL_TO_UDINT(EXPT(2,lrNumIter));
+
+    IF size > lrNumIterPwr2 THEN
+      numIterations := LREAL_TO_USINT(lrNumIter) + 1;
+    ELSE
+      numIterations := LREAL_TO_USINT(lrNumIter);
+		END_IF
 ELSE
     numIterations := 0; // Handle invalid input
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Release" Id="{eb24ba0f-589a-4f48-bb6e-7591b7eb3fd4}">
+      <Declaration><![CDATA[METHOD PUBLIC Release : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bInit := FALSE;
+IF _stError_ARP <> 0  THEN 
+  __DELETE(_stError_ARP);
 END_IF
+
+IF _stClass_ARP <> 0 THEN 
+   __DELETE(_stClass_ARP);
+END_IF
+
+IF udiErrorKeys_ARP <> 0 THEN 
+  __DELETE(udiErrorKeys_ARP);
+END_IF
+
+IF udiClassKeys_ARP <> 0 THEN 
+  __DELETE(udiClassKeys_ARP);
+END_IF
+Release := _stError_ARP = 0 AND _stClass_ARP = 0 AND udiErrorKeys_ARP = 0 AND udiClassKeys_ARP = 0; 
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -296,27 +348,21 @@ CASE stmLoadDB OF
       END_IF
   
   STM_LoadDB.GenErrorKeys:
-//      udiErrorKeys_AR[udiIndex+ C.uiErrorShiftIndex_C] := STRING_TO_UDINT(_stError_ARP[udiIndex].errorId);	// error ID unique for any type of error, no matter the class!
     udiErrorKeys_ARP^[udiIndex+ _uiErrShiftIndex] := STRING_TO_UDINT(_stError_ARP^[udiIndex].errorId);	// error ID unique for any type of error, no matter the class!
     
     udiIndex := udiIndex + 1;
-//      IF udiIndex > C.uiNumErrorSources_C THEN
     IF udiIndex > _stConstValues.udiErrNumRecord THEN
       udiIndex := 1;
-//				objErrorDict.Init(udiKeyArray_P	:=	ADR(udiErrorKeys_AR),usiNbIter_C := C.uiErrorNumIter_C,udiSizeKeyArray := C.uiErrorUpSizePowerTwo_C);
       objErrorDict.Init(udiKeyArray_P	:=	udiErrorKeys_ARP,usiNbIter_C := _uiErrNumIter, udiSizeKeyArray := _uiUpSizeErrPowerTwo);
       stmLoadDB := STM_LoadDB.GenClassKeys;
     END_IF
     
 STM_LoadDB.GenClassKeys:
-//      udiClassKeys_AR[udiIndex+ C.uiClassShiftIndex_C] := STRING_TO_UDINT(_stClass_ARP[udiIndex].classId);	// error ID unique for any type of error, no matter the class!
     udiClassKeys_ARP^[udiIndex+ _uiClassShiftIndex] := STRING_TO_UDINT(_stClass_ARP^[udiIndex].classId);
     
     udiIndex := udiIndex + 1;
-//      IF udiIndex > C.uiNumClassWithErr_C THEN
     IF udiIndex > _stConstValues.udiClassNumRecord THEN
       udiIndex := 1;
-//				objClassDict.Init(udiKeyArray_P	:=	ADR(udiClassKeys_AR),usiNbIter_C := C.uiClassNumIter_C,udiSizeKeyArray := C.uiClassUpSizePowerTwo_C);
       objClassDict.Init(udiKeyArray_P	:=	udiClassKeys_ARP,usiNbIter_C := _uiClassNumIter, udiSizeKeyArray := _uiUpSizeClassPowerTwo);
       stmLoadDB := STM_LoadDB.EndReadingDB;  
     END_IF
@@ -337,25 +383,28 @@ VAR_INPUT
   classID	:	STRING(3);
 END_VAR
 VAR_OUTPUT
-//	values:	ST_SP_ClassReturn;
-	udiClassIndex:	UDINT;
-  error:  BOOL;
+	udiClassIndex :	UDINT;
+  error         : BOOL;
 END_VAR
 VAR
-	bExecEnd:		BOOL;
-	foundKey	:	UDINT;
-	uiSafeIter:	USINT := 0;
+	bExecEnd      : BOOL;
+	foundKey	    :	UDINT;
+	uiSafeIter    :	USINT := 0;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[REPEAT
 	bExecEnd := objClassDict.Search(udiKey_DB := STRING_TO_UDINT(classID),udiFoundKeyIndex => foundKey, bError => error);
 	uiSafeIter := uiSafeIter + 1;
-//	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > C.uiClassNumIter_C)
 	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiClassNumIter)
 END_REPEAT
 
 //MPL if the error DB is not loaded or empty or not found, udiClassIndex return 0 !!
-udiClassIndex := foundKey -_uiClassShiftIndex; //values := _stClass_ARP[foundKey-C.uiClassShiftIndex_C];]]></ST>
+// Correction: if an error is found, or that the returned key is zero, then returned class index to zero
+IF (error = TRUE) OR (foundKey <= _uiClassShiftIndex) OR (foundKey > _stConstValues.udiClassNumRecord+_uiClassShiftIndex) THEN
+	udiClassIndex := 0;
+ELSE
+	udiClassIndex := foundKey -_uiClassShiftIndex;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="SearchErrorData" Id="{fd095195-d56a-4aa9-8b21-0c660bf77e01}">
@@ -364,26 +413,29 @@ VAR_INPUT
   errorID	:	STRING(3);
 END_VAR
 VAR_OUTPUT
-//	values:	ST_SP_RecordReturn;
-	udiErrorIndex	:	UDINT;
-  error:  BOOL;
+	udiErrorIndex	  :	UDINT;
+  error           : BOOL;
 END_VAR
 VAR
-	bExecEnd:		BOOL;
-	foundKey	:	UDINT;
-	uiSafeIter:	USINT := 0;
+	bExecEnd        :	BOOL;
+	foundKey	      :	UDINT;
+	uiSafeIter      :	USINT := 0;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[REPEAT
 	bExecEnd := objErrorDict.Search(udiKey_DB := STRING_TO_UDINT(errorID),udiFoundKeyIndex => foundKey, bError => error);
 	uiSafeIter := uiSafeIter + 1;
-//	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > C.uiErrorNumIter_C)
 	UNTIL (bExecEnd = TRUE) OR (uiSafeIter > _uiErrNumIter)
 END_REPEAT
 
 //MPL if the error DB is not loaded or empty or not found, udiErrorIndex return 0 !!
-udiErrorIndex := foundKey-_uiErrShiftIndex;//values := _stError_ARP[foundKey-C.uiErrorShiftIndex_C];]]></ST>
+//Correction: if an error is found, or that the returned key is zero, then returned error index to zero
+IF (error = TRUE) OR (foundKey <= _uiErrShiftIndex) OR (foundKey > _stConstValues.udiErrNumRecord+_uiErrShiftIndex) THEN
+	udiErrorIndex := 0;
+ELSE
+	udiErrorIndex := foundKey -_uiErrShiftIndex;
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Property Name="sMsgLang" Id="{587284e0-a98a-42e7-b712-afbcd31f035b}">

@@ -7,9 +7,9 @@ STRUCT
 	//classId: STRING(3);
 	errorId: STRING(3);
 	severity: BYTE;
-	errorMsgShort: STRING(255);
-	errorMsgLong: STRING(255);
-	remediationMsg: STRING(255);
+	errorMsgShort: T_MaxString;
+	errorMsgLong: T_MaxString;
+	remediationMsg: T_MaxString;
 	telegramSending: STRING(1);
 	hmiErrorShow: STRING(1);
 END_STRUCT

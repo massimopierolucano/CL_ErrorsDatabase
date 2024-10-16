@@ -5,9 +5,9 @@
 STRUCT
 	tableId: UDINT;
 	classId: STRING(3);
-	className: STRING(255);
+	className: T_MaxString;
 	instanceNum: BYTE;
-	objDescriptMsg:	STRING(255);
+	objDescriptMsg:	T_MaxString;
 END_STRUCT
 END_TYPE
 ]]></Declaration>
